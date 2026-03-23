@@ -11,6 +11,9 @@ export default function PreviewModal() {
   const [loadEmbeddedMedia, setLoadEmbeddedMedia] = useState(false)
   const [mediaBlocked, setMediaBlocked] = useState(false)
   const closeButtonRef = useRef(null)
+  const audioSource = media?.largeUrl || media?.originalUrl
+  const downloadUrl = media?.type === 'audio' ? audioSource || media?.originalUrl : media?.originalUrl
+  const copyUrl = media?.originalUrl || media?.pageUrl || downloadUrl
 
   useEffect(() => {
     if (media) {
@@ -41,7 +44,7 @@ export default function PreviewModal() {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(media.originalUrl || media.previewUrl)
+      await navigator.clipboard.writeText(copyUrl)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 2000)
     } catch {
@@ -51,7 +54,7 @@ export default function PreviewModal() {
 
   const handleDownload = () => {
     const link = document.createElement('a')
-    link.href = media.originalUrl
+    link.href = downloadUrl
     link.download = media.title || 'media'
     link.target = '_blank'
     link.rel = 'noopener noreferrer'
@@ -84,7 +87,7 @@ export default function PreviewModal() {
             This source blocked inline playback in the browser. You can still open or download it.
           </p>
           <a
-            href={media.originalUrl}
+            href={audioSource || media.originalUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-xl transition-colors hover:bg-white/20"
@@ -174,7 +177,7 @@ export default function PreviewModal() {
                     </div>
                     <audio
                       controls
-                      src={media.originalUrl}
+                      src={audioSource}
                       preload="none"
                       onError={() => {
                         setMediaBlocked(true)
