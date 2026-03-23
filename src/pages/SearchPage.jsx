@@ -19,7 +19,7 @@ export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { activeFilter, setActiveFilter } = useStore()
   const [inputVal, setInputVal] = useState(searchParams.get('q') || '')
-  const debouncedQuery = useDebounce(inputVal, 300)
+  const debouncedQuery = useDebounce(inputVal, 100)
   const currentQueryParam = searchParams.get('q') || ''
 
   useEffect(() => {
