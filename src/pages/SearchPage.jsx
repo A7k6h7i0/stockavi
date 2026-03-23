@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { SearchCode } from 'lucide-react'
+import { ArrowLeft, SearchCode } from 'lucide-react'
 import { searchMedia } from '../api/mediaApi'
 import MasonryGrid from '../components/media/MasonryGrid'
 import PreviewModal from '../components/media/PreviewModal'
@@ -28,9 +28,9 @@ export default function SearchPage() {
 
   useEffect(() => {
     if (debouncedQuery && debouncedQuery !== currentQueryParam) {
-      setSearchParams({ q: debouncedQuery })
+      setSearchParams({ q: debouncedQuery }, { replace: true })
     } else if (!debouncedQuery && currentQueryParam) {
-      setSearchParams({})
+      setSearchParams({}, { replace: true })
     }
   }, [currentQueryParam, debouncedQuery, setSearchParams])
 
@@ -65,6 +65,13 @@ export default function SearchPage() {
 
         <div className="sticky top-16 z-40 border-b border-neutral-200/60 bg-white/70 px-4 py-4 backdrop-blur-2xl dark:border-white/10 dark:bg-neutral-950/60 sm:px-8">
           <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 self-start rounded-2xl border border-white/60 bg-white/85 px-4 py-3 text-sm font-semibold text-neutral-700 shadow-[0_16px_40px_rgba(15,23,42,0.08)] transition-colors hover:text-brand-600 dark:border-white/10 dark:bg-white/5 dark:text-neutral-200 dark:hover:text-brand-300"
+            >
+              <ArrowLeft size={16} />
+              Home
+            </Link>
             <div className="flex-1">
               <SearchBar
                 value={inputVal}
