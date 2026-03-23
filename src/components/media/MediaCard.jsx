@@ -7,6 +7,8 @@ import Badge from '../ui/Badge'
 export default function MediaCard({ item, index = 0 }) {
   const [hovered, setHovered] = useState(false)
   const [imgLoaded, setImgLoaded] = useState(false)
+  const [videoEnabled, setVideoEnabled] = useState(false)
+  const [videoBlocked, setVideoBlocked] = useState(false)
   const videoRef = useRef(null)
   const { setPreviewMedia } = useStore()
 
@@ -15,17 +17,24 @@ export default function MediaCard({ item, index = 0 }) {
   const handleMouseEnter = () => {
     setHovered(true)
 
-    if (item.type === 'video' && videoRef.current) {
-      videoRef.current.play().catch(() => {})
+    if (item.type === 'video' && !videoBlocked) {
+      setVideoEnabled(true)
     }
   }
 
   const handleMouseLeave = () => {
     setHovered(false)
+    setVideoEnabled(false)
 
     if (item.type === 'video' && videoRef.current) {
       videoRef.current.pause()
       videoRef.current.currentTime = 0
+    }
+  }
+
+  const handleVideoCanPlay = () => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {})
     }
   }
 
@@ -42,6 +51,7 @@ export default function MediaCard({ item, index = 0 }) {
   const aspectRatio =
     item.width && item.height ? Math.min(Math.max(item.height / item.width, 0.62), 1.8) : 1
   const cardHeight = Math.round(300 * aspectRatio)
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
@@ -80,18 +90,27 @@ export default function MediaCard({ item, index = 0 }) {
             alt={item.title || 'Video preview'}
             loading="lazy"
             onLoad={() => setImgLoaded(true)}
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${hovered ? 'opacity-0' : 'opacity-100'}`}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${videoEnabled && !videoBlocked ? 'opacity-0' : 'opacity-100'}`}
           />
-          <video
-            ref={videoRef}
-            src={item.originalUrl}
-            poster={item.previewUrl}
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${hovered ? 'opacity-100' : 'opacity-0'}`}
-          />
+
+          {videoEnabled && !videoBlocked && (
+            <video
+              ref={videoRef}
+              src={item.originalUrl}
+              poster={item.previewUrl}
+              muted
+              loop
+              playsInline
+              preload="none"
+              onCanPlay={handleVideoCanPlay}
+              onError={() => {
+                setVideoBlocked(true)
+                setVideoEnabled(false)
+              }}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+
           {!hovered && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-xl">
@@ -115,7 +134,7 @@ export default function MediaCard({ item, index = 0 }) {
           <p className="mt-4 max-w-[16rem] text-sm font-semibold leading-6 text-white/90">
             {item.title || 'Audio Track'}
           </p>
-          <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/55">Preview in modal</p>
+          <p className="mt-2 text-xs uppercase tracking-[0.25em] text-white/55">Open to play</p>
         </div>
       )}
 

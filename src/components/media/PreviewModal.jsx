@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, Download, ExternalLink, Music2, Tag, User, X } from 'lucide-react'
+import { Copy, Download, ExternalLink, Music2, PlayCircle, Tag, User, X } from 'lucide-react'
 import useStore from '../../store/useStore'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
@@ -8,12 +8,16 @@ import Badge from '../ui/Badge'
 export default function PreviewModal() {
   const { previewMedia: media, clearPreviewMedia } = useStore()
   const [copied, setCopied] = useState(false)
+  const [loadEmbeddedMedia, setLoadEmbeddedMedia] = useState(false)
+  const [mediaBlocked, setMediaBlocked] = useState(false)
   const closeButtonRef = useRef(null)
 
   useEffect(() => {
     if (media) {
       document.body.style.overflow = 'hidden'
       closeButtonRef.current?.focus()
+      setLoadEmbeddedMedia(false)
+      setMediaBlocked(false)
     } else {
       document.body.style.overflow = ''
       setCopied(false)
@@ -53,6 +57,45 @@ export default function PreviewModal() {
     link.rel = 'noopener noreferrer'
     link.click()
   }
+
+  const renderEmbeddedAction = () => (
+    <div className="relative z-10 flex w-full max-w-lg flex-col items-center gap-5 px-6 py-10 text-center text-white">
+      <div className="flex h-28 w-28 animate-float-slow items-center justify-center rounded-full border border-white/15 bg-white/10 backdrop-blur-xl">
+        {media.type === 'audio' ? <Music2 size={40} /> : <PlayCircle size={44} />}
+      </div>
+      <div>
+        <p className="text-2xl font-bold tracking-[-0.03em]">{media.title || 'Media preview'}</p>
+        <p className="mt-2 text-sm leading-7 text-white/65">
+          Some third-party hosts block embedded playback. Load the preview only when needed.
+        </p>
+      </div>
+      {!mediaBlocked ? (
+        <Button
+          onClick={() => setLoadEmbeddedMedia(true)}
+          variant="glass"
+          className="border-white/20 px-5"
+        >
+          <PlayCircle size={16} />
+          Load Preview
+        </Button>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-white/75">
+            This source blocked inline playback in the browser. You can still open or download it.
+          </p>
+          <a
+            href={media.originalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-xl transition-colors hover:bg-white/20"
+          >
+            <ExternalLink size={15} />
+            Open Original Media
+          </a>
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <AnimatePresence>
@@ -99,30 +142,50 @@ export default function PreviewModal() {
                 />
               )}
 
-              {media.type === 'video' && (
-                <video
-                  src={media.originalUrl}
-                  poster={media.previewUrl}
-                  controls
-                  autoPlay
-                  muted
-                  loop
-                  className="relative z-10 h-full w-full object-contain"
-                />
-              )}
+              {media.type === 'video' &&
+                (loadEmbeddedMedia && !mediaBlocked ? (
+                  <video
+                    src={media.originalUrl}
+                    poster={media.previewUrl}
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                    preload="none"
+                    onError={() => {
+                      setMediaBlocked(true)
+                      setLoadEmbeddedMedia(false)
+                    }}
+                    className="relative z-10 h-full w-full object-contain"
+                  />
+                ) : (
+                  renderEmbeddedAction()
+                ))}
 
-              {media.type === 'audio' && (
-                <div className="relative z-10 flex w-full max-w-lg flex-col items-center gap-6 px-6 py-10 text-white">
-                  <div className="flex h-28 w-28 animate-float-slow items-center justify-center rounded-full border border-white/15 bg-white/10 backdrop-blur-xl">
-                    <Music2 size={40} />
+              {media.type === 'audio' &&
+                (loadEmbeddedMedia && !mediaBlocked ? (
+                  <div className="relative z-10 flex w-full max-w-lg flex-col items-center gap-6 px-6 py-10 text-white">
+                    <div className="flex h-28 w-28 animate-float-slow items-center justify-center rounded-full border border-white/15 bg-white/10 backdrop-blur-xl">
+                      <Music2 size={40} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold tracking-[-0.03em]">{media.title || 'Audio track'}</p>
+                      <p className="mt-2 text-sm text-white/65">Listen and download the original source file.</p>
+                    </div>
+                    <audio
+                      controls
+                      src={media.originalUrl}
+                      preload="none"
+                      onError={() => {
+                        setMediaBlocked(true)
+                        setLoadEmbeddedMedia(false)
+                      }}
+                      className="w-full"
+                    />
                   </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold tracking-[-0.03em]">{media.title || 'Audio track'}</p>
-                    <p className="mt-2 text-sm text-white/65">Listen and download the original source file.</p>
-                  </div>
-                  <audio controls src={media.originalUrl} className="w-full" />
-                </div>
-              )}
+                ) : (
+                  renderEmbeddedAction()
+                ))}
             </div>
 
             <div className="flex flex-col overflow-y-auto p-6 sm:p-8 lg:w-[38%]">
